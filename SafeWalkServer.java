@@ -16,6 +16,8 @@ public class SafeWalkServer {
     int portNumber = 8888;
     ServerSocket ss;
     ArrayList requests = new ArrayList();
+    PrintWriter out; //output to client
+    BufferedReader in; //input from client
     
     public SafeWalkServer(int port) throws SocketException, IOException { //constructs the server if given a port #
         if (port >= 1025 && 65535 >= port) {
@@ -44,9 +46,12 @@ public class SafeWalkServer {
     public void run() throws SocketException, IOException { //Start a loop to accept incoming connections
         while (true) {
             Socket client = ss.accept();
+            out = new PrintWriter(client.getOutputStream(), true);
+            in = new BufferedReader(new InputStreamReader(client.getInputStream()));
         }
     }
-    //Here begins the methods that will be invoked via 'commands'
+    
+    //Here begins the methods that will be invoked via 'commands'------------------------------------------------------
     
     public void listRequests() { //will need some sort of input to tell which client it needs to send to
         //iterate through the arraylist and print the requests
@@ -55,13 +60,14 @@ public class SafeWalkServer {
         }
     }
     
-    public void reset() {//will need some sort of input to tell which client it needs to send to
+    public void reset() { //will need some sort of input to tell which client it needs to send to
         //close up the clients' request and tell them that an error occured with the connection
     }
     
-    public void shutdown() {//will need some sort of input to tell which client it needs to send to
+    public void shutdown() { //will need some sort of input to tell which client it needs to send to
         //close up, similar to the reset command, but exit the run loop, shuting down the server
     }
+    //Here ends the 'command' methods----------------------------------------------------------------------------------
     
     public static void main(String[] args) throws SocketException, IOException {
         if (args.length == 0) {
