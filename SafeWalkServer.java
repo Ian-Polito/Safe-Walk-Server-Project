@@ -47,13 +47,19 @@ public class SafeWalkServer {
         }
     }
     //Here begins the methods that will be invoked via 'commands'
-    public static void listRequests() {//will need some sort of input to tell which client it needs to send to
+    
+    public void listRequests() { //will need some sort of input to tell which client it needs to send to
         //iterate through the arraylist and print the requests
+        for (int i = 0; i < requests.size(); i++) {
+            System.out.println(requests.get(i));
+        }
     }
-    public static void reset() {//will need some sort of input to tell which client it needs to send to
+    
+    public void reset() {//will need some sort of input to tell which client it needs to send to
         //close up the clients' request and tell them that an error occured with the connection
     }
-    public static void shutdown() {//will need some sort of input to tell which client it needs to send to
+    
+    public void shutdown() {//will need some sort of input to tell which client it needs to send to
         //close up, similar to the reset command, but exit the run loop, shuting down the server
     }
     
@@ -74,4 +80,3 @@ public class SafeWalkServer {
         }
     }
 }
-
