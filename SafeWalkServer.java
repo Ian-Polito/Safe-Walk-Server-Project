@@ -11,32 +11,37 @@ import java.net.*;
 import java.io.*;
 import java.util.ArrayList;
 
-public class SafeWalkServer {
+interface Runnable {
+}
+
+public class SafeWalkServer implements Runnable {
     
-    int portNumber = 8888;
-    ServerSocket ss;
-    ArrayList requests = new ArrayList();
+    int portNumber = 8888; //default listening port
+    ServerSocket ss; //the server socket
+    ArrayList requests = new ArrayList(); //list of requests for SafeWalk
+    ArrayList clients = new ArrayList(); //list of client objects
     PrintWriter out; //output to client
     BufferedReader in; //input from client
+    boolean isStopped = false; //variable used to stop the 'run' loop if necessary
     
     public SafeWalkServer(int port) throws SocketException, IOException { //constructs the server if given a port #
         if (port >= 1025 && 65535 >= port) {
-            ServerSocket ss = new ServerSocket(port);
+            ss = new ServerSocket(port);
             portNumber = port;
-            ss.setReuseAddress(true);
+            ss.setReuseAddress(true); //allows the port to be reusable once server is closed
             System.out.println("Connected using port " + portNumber + ".");
         }
         else {
             System.out.println("Port invalid, using free port 8888.");
-            ServerSocket ss = new ServerSocket(portNumber);
-            ss.setReuseAddress(true);
+            new ServerSocket(portNumber);
+            ss.setReuseAddress(true); //allows the port to be reusable once server is closed
         }
     }
     
     public SafeWalkServer() throws SocketException, IOException { //constructs the server if not given a port #
         System.out.println("Port not specified, using free port 8888.");
-        ServerSocket ss = new ServerSocket(portNumber);
-        ss.setReuseAddress(true);
+        ss = new ServerSocket(portNumber);
+        ss.setReuseAddress(true); //allows the port to be reusable once server is closed
     }
     
     public int getLocalPort() { // returns the port number we are on
@@ -44,10 +49,13 @@ public class SafeWalkServer {
     }
     
     public void run() throws SocketException, IOException { //Start a loop to accept incoming connections
-        while (true) {
+        while (!isStopped) {
             Socket client = ss.accept();
+            //new Thread(client).start();
             out = new PrintWriter(client.getOutputStream(), true);
+            out.flush();
             in = new BufferedReader(new InputStreamReader(client.getInputStream()));
+            Client c = new Client(in.readLine(), client);
         }
     }
     
@@ -62,6 +70,7 @@ public class SafeWalkServer {
     
     public void reset() { //will need some sort of input to tell which client it needs to send to
         //close up the clients' request and tell them that an error occured with the connection
+        
     }
     
     public void shutdown() { //will need some sort of input to tell which client it needs to send to
@@ -84,5 +93,16 @@ public class SafeWalkServer {
             SafeWalkServer sws = new SafeWalkServer(p);
             sws.run();
         }
+    }
+}
+
+class Client {
+    
+    String command;
+    Socket client;
+    
+    public Client(String command, Socket client) {
+        this.command = command;
+        this.client = client;
     }
 }
