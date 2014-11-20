@@ -1,8 +1,8 @@
 /*
  Project 5
  Safe Walk Server
- @author Ian Polito ipolito 801
- @author Kurt Sermersheim ksermer lab section
+ @author Ian Polito ipolito 810
+ @author Kurt Sermersheim ksermers LN5
  CS 180
  */
 
@@ -14,17 +14,16 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.AbstractList;
 
-public class SafeWalkServer implements Runnable {
+public class SafeWalkServer {
     
-    int portNumber = 8888; //default listening port
+    int portNumber = 0; //default listening port
     ServerSocket ss; //the server socket
     ArrayList<ArrayList> requests = new ArrayList<>(); //list of array lists
     ArrayList<String> elements; //list of elements of requests
-    ArrayList<String> elements2 = new ArrayList<>();
+    ArrayList<String> elements2 = new ArrayList<>(); //temporary list of strings
     PrintWriter out; //output to client
     BufferedReader in; //input from client
     boolean isStopped = false; //variable used to stop the 'run' loop if necessary
-    
     Socket difclient; //just initializes the client
     final ArrayList<Socket> clientsConnected = new ArrayList<>(); //Arraylist of client sockets
     
@@ -36,7 +35,7 @@ public class SafeWalkServer implements Runnable {
             System.out.println("Connected using port " + portNumber + ".");
         }
         else {
-            System.out.println("Port invalid, using free port 8888.");
+            System.out.println("Port invalid, using free port.");
             new ServerSocket(portNumber);
             ss.setReuseAddress(true); //allows the port to be reusable once server is closed
         }
@@ -47,7 +46,7 @@ public class SafeWalkServer implements Runnable {
     }
     
     public SafeWalkServer() throws SocketException, IOException { //constructs the server if not given a port #
-        System.out.println("Port not specified, using free port 8888.");
+        System.out.println("Port not specified, using free port.");
         ss = new ServerSocket(portNumber);
         ss.setReuseAddress(true); //allows the port to be reusable once server is closed
     }
@@ -85,35 +84,40 @@ public class SafeWalkServer implements Runnable {
             //begin testing to see if request is valid ----------------------------------------------------------------
             else {
                 elements = new ArrayList<String>(Arrays.asList(command.split("\\s*,\\s*")));
-                if (elements.size() = 4) {
-                	if ((elements.get(1).equals("CL50")) | (elements.get(1).equals("EE")) | (elements.get(1).equals("LWSN")) | (elements.get(1).equals("PMU")) | (elements.get(1).equals("PUSH"))) {
-                		if (!elements.get(1).equals("*")) {
-                			if ((elements.get(2).equals("CL50")) | (elements.get(2).equals("EE")) | (elements.get(2).equals("LWSN")) | (elements.get(2).equals("PMU")) | (elements.get(2).equals("PUSH")) | (elements.get(2).equals("*"))) {
-                				if (!elements.get(1).equals(elements.get(2))) {
+                if (elements.size() == 4) {
+                 if ((elements.get(1).equals("CL50")) | (elements.get(1).equals("EE")) | 
+                   (elements.get(1).equals("LWSN")) | (elements.get(1).equals("PMU")) | 
+                   (elements.get(1).equals("PUSH"))) {
+                  if (!elements.get(1).equals("*")) {
+                   if ((elements.get(2).equals("CL50")) | (elements.get(2).equals("EE")) | 
+                     (elements.get(2).equals("LWSN")) | (elements.get(2).equals("PMU")) | 
+                     (elements.get(2).equals("PUSH")) | (elements.get(2).equals("*"))) {
+                    if (!elements.get(1).equals(elements.get(2))) {
+                     //request is good, do this
                                     requests.add(elements);
                                     elements2.add(command);
                                     clientsConnected.add(client);
                                     System.out.println("Request Added.");
                                     elements.clear();
-                				}
+                    }
                                 else {
                                     out.println("ERROR: invalid request");
                                     client.close();
                                     elements.clear();
                                 }
-                			}
+                   }
                             else {
                                 out.println("ERROR: invalid request");
                                 client.close();
                                 elements.clear();
                             }
-                		}
+                  }
                         else {
                             out.println("ERROR: invalid request");
                             client.close();
                             elements.clear();
                         }
-                	}
+                 }
                     else {
                         out.println("ERROR: invalid request");
                         client.close();
@@ -130,14 +134,14 @@ public class SafeWalkServer implements Runnable {
             
             //begin checking for matches ------------------------------------------------------------------------------
             //should check if FROM's are the same & TO's are not both stars
-            if (requests.size() > 0) {
+            if (requests.size() > 1) {
                 List temp = (Arrays.asList((elements2.get(elements2.size()- 1)).split("\\s*,\\s*")));
                 List temp2;
                 for (int i = 0; i < elements2.size() - 1; i++) {
                     temp2 = (Arrays.asList(elements2.get(i).split("\\s*,\\s*")));
                     if ((temp.get(1)).equals(temp2.get(1))) {
                         if ((temp.get(2)).equals(temp2.get(2)) | ((temp.get(2)).equals("*")) | ((temp2.get(2)).equals("*"))) {
-                        	if (!(((temp.get(2)).equals("*")) && ((temp2.get(2)).equals("*")))) {
+                         if (!(((temp.get(2)).equals("*")) && ((temp2.get(2)).equals("*")))) {
                                 //the matches are correct, do this stuff
                                 String s = ("RESPONSE: "); //the string being sent to the match
                                 String s2 = ("RESPONSE: "); //the string being sent to the requester
@@ -173,6 +177,7 @@ public class SafeWalkServer implements Runnable {
     //Here begins the methods that will be invoked via 'commands'------------------------------------------------------
     public void listRequests(Socket client) throws SocketException, IOException {
         //print the list of requests to the client
+        System.out.println(requests);
         out.println(requests);
         out.flush();
         client.close();
