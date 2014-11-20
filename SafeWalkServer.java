@@ -85,54 +85,44 @@ public class SafeWalkServer implements Runnable {
             //begin testing to see if request is valid ----------------------------------------------------------------
             else {
                 elements = new ArrayList<String>(Arrays.asList(command.split("\\s*,\\s*")));
-                if (elements.size() != 4) {
-                    out.println("ERROR: invalid request");
-                    client.close();
-                    elements.clear();
-                }
-                if (!elements.get(1).equals("CL50")) {
-                    if (!elements.get(1).equals("EE")) {
-                        if (!elements.get(1).equals("LWSN")) {
-                            if (!elements.get(1).equals("PMU")) {
-                                if (!elements.get(1).equals("PUSH")) {
-                                        out.println("ERROR: invalid request");
-                                        client.close();
-                                        elements.clear();
+                if (elements.size() = 4) {
+                	if ((elements.get(1).equals("CL50")) | (elements.get(1).equals("EE")) | (elements.get(1).equals("LWSN")) | (elements.get(1).equals("PMU")) | (elements.get(1).equals("PUSH"))) {
+                		if (!elements.get(1).equals("*")) {
+                			if ((elements.get(2).equals("CL50")) | (elements.get(2).equals("EE")) | (elements.get(2).equals("LWSN")) | (elements.get(2).equals("PMU")) | (elements.get(2).equals("PUSH")) | (elements.get(2).equals("*"))) {
+                				if (!elements.get(1).equals(elements.get(2))) {
+                                    requests.add(elements);
+                                    elements2.add(command);
+                                    clientsConnected.add(client);
+                                    System.out.println("Request Added.");
+                                    elements.clear();
+                				}
+                                else {
+                                    out.println("ERROR: invalid request");
+                                    client.close();
+                                    elements.clear();
                                 }
+                			}
+                            else {
+                                out.println("ERROR: invalid request");
+                                client.close();
+                                elements.clear();
                             }
+                		}
+                        else {
+                            out.println("ERROR: invalid request");
+                            client.close();
+                            elements.clear();
                         }
+                	}
+                    else {
+                        out.println("ERROR: invalid request");
+                        client.close();
+                        elements.clear();
                     }
-                }
-                if (elements.get(1).equals("*")) {
-                    out.println("ERROR: invalid request");
-                    client.close();
-                    elements.clear();
-                }
-                if (!elements.get(2).equals("CL50")) {
-                    if (!elements.get(2).equals("EE")) {
-                        if (!elements.get(2).equals("LWSN")) {
-                            if (!elements.get(2).equals("PMU")) {
-                                if (!elements.get(2).equals("PUSH")) {
-                                    if (!elements.get(2).equals("*")) {
-                                        out.println("ERROR: invalid request");
-                                        client.close();
-                                        elements.clear();
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                if (elements.get(1).equals(elements.get(2))) {
-                    out.println("ERROR: invalid request");
-                    client.close();
-                    elements.clear();
                 }
                 else {
-                    requests.add(elements);
-                    elements2.add(command);
-                    clientsConnected.add(client);
-                    System.out.println("Request Added.");
+                    out.println("ERROR: invalid request");
+                    client.close();
                     elements.clear();
                 }
             }
