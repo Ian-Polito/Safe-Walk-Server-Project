@@ -12,19 +12,21 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.AbstractList;
+
 public class SafeWalkServer implements Runnable {
     
     int portNumber = 8888; //default listening port
     ServerSocket ss; //the server socket
-    ArrayList<List> requests = new ArrayList<>(); //list of arrayLists ???
-    List<String> elements; //list of elements of requests
-    ArrayList clients = new ArrayList(); //list of client objects
+    ArrayList<ArrayList> requests = new ArrayList<>(); //list of array lists
+    ArrayList<String> elements; //list of elements of requests
+    ArrayList<String> elements2 = new ArrayList<>();
     PrintWriter out; //output to client
     BufferedReader in; //input from client
     boolean isStopped = false; //variable used to stop the 'run' loop if necessary
     
     Socket difclient; //just initializes the client
-    final ArrayList<Socket> clientsConnected = new ArrayList<>();
+    final ArrayList<Socket> clientsConnected = new ArrayList<>(); //Arraylist of client sockets
     
     public SafeWalkServer(int port) throws SocketException, IOException { //constructs the server if given a port #
         if (port >= 1025 && 65535 >= port) {
@@ -41,7 +43,7 @@ public class SafeWalkServer implements Runnable {
     }
     
     public SafeWalkServer(Socket difclient) {
-    	this.difclient = difclient;
+        this.difclient = difclient;
     }
     
     public SafeWalkServer() throws SocketException, IOException { //constructs the server if not given a port #
@@ -57,7 +59,6 @@ public class SafeWalkServer implements Runnable {
     public void run() throws SocketException, IOException { //Start a loop to accept incoming connections
         while (!isStopped) {
             Socket client = ss.accept();
-            clientsConnected.add(client);
             System.out.println("Client Connected.");
             out = new PrintWriter(client.getOutputStream(), true);
             out.flush();
@@ -65,95 +66,178 @@ public class SafeWalkServer implements Runnable {
             String command = in.readLine();
             
             if (command.startsWith(":")) {
-            	if (command.equals(":LIST_PENDING_REQUESTS")) { //lists pending requests
-            		listRequests(client);
-            	}
-            
-            	if (command.equals(":SHUTDOWN")) { //shuts down the server
-            		shutdown(client);
-            	}
-            
-            	if (command.equals(":RESET")) { //resets the server
-            		reset(client);
-            	}
-            	else {
-            		out.println("ERROR: invalid request"); //sends a message saying it was an invalid command
-            		client.close();
-            	}
+                if (command.equals(":LIST_PENDING_REQUESTS")) { //lists pending requests
+                    listRequests(client);
+                }
+                
+                if (command.equals(":SHUTDOWN")) { //shuts down the server
+                    shutdown(client);
+                }
+                
+                if (command.equals(":RESET")) { //resets the server
+                    reset(client);
+                }
+                else {
+                    out.println("ERROR: invalid request"); //sends a message saying it was an invalid command
+                    client.close();
+                }
             }
-            //Thread thread = new Thread(ss2);
-            //thread.start();
+            //begin testing to see if request is valid ----------------------------------------------------------------
             else {
-            	elements = Arrays.asList(command.split(","));
-            	if (elements.size() != 4) {
-            		out.println("ERROR: invalid request");
-            		client.close();
-            	}
-            	else if (!elements.get(1).equals("CL50") | !elements.get(1).equals("EE") | !elements.get(1).equals("LWSN") 
-            			| !elements.get(1).equals("PMU") | !elements.get(1).equals("PUSH") | elements.get(1).equals("*")) {
-            		out.println("ERROR: invalid request");
-            		client.close();
-            	}
+                elements = new ArrayList<String>(Arrays.asList(command.split("\\s*,\\s*")));
+                if (elements.size() != 4) {
+                    out.println("ERROR: invalid request");
+                    client.close();
+                    elements.clear();
+                }
+                if (!elements.get(1).equals("CL50")) {
+                    if (!elements.get(1).equals("EE")) {
+                        if (!elements.get(1).equals("LWSN")) {
+                            if (!elements.get(1).equals("PMU")) {
+                                if (!elements.get(1).equals("PUSH")) {
+                                        out.println("ERROR: invalid request");
+                                        client.close();
+                                        elements.clear();
+                                }
+                            }
+                        }
+                    }
+                }
+                if (elements.get(1).equals("*")) {
+                    out.println("ERROR: invalid request");
+                    client.close();
+                    elements.clear();
+                }
+                if (!elements.get(2).equals("CL50")) {
+                    if (!elements.get(2).equals("EE")) {
+                        if (!elements.get(2).equals("LWSN")) {
+                            if (!elements.get(2).equals("PMU")) {
+                                if (!elements.get(2).equals("PUSH")) {
+                                    if (!elements.get(2).equals("*")) {
+                                        out.println("ERROR: invalid request");
+                                        client.close();
+                                        elements.clear();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                if (elements.get(1).equals(elements.get(2))) {
+                    out.println("ERROR: invalid request");
+                    client.close();
+                    elements.clear();
+                }
+                else {
+                    requests.add(elements);
+                    elements2.add(command);
+                    clientsConnected.add(client);
+                    System.out.println("Request Added.");
+                    elements.clear();
+                }
             }
+            //stop testing --------------------------------------------------------------------------------------------
+            
+            //begin checking for matches ------------------------------------------------------------------------------
+            //should check if FROM's are the same & TO's are not both stars
+            if (requests.size() > 0) {
+                List temp = (Arrays.asList((elements2.get(elements2.size()- 1)).split("\\s*,\\s*")));
+                List temp2;
+                for (int i = 0; i < elements2.size() - 1; i++) {
+                    temp2 = (Arrays.asList(elements2.get(i).split("\\s*,\\s*")));
+                    if ((temp.get(1)).equals(temp2.get(1))) {
+                        if ((temp.get(2)).equals(temp2.get(2)) | ((temp.get(2)).equals("*")) | ((temp2.get(2)).equals("*"))) {
+                        	if (!(((temp.get(2)).equals("*")) && ((temp2.get(2)).equals("*")))) {
+                                //the matches are correct, do this stuff
+                                String s = ("RESPONSE: "); //the string being sent to the match
+                                String s2 = ("RESPONSE: "); //the string being sent to the requester
+                                s += temp.get(0) + "," + temp.get(1) + "," + temp.get(2) + "," + temp.get(3);
+                                s2 += temp2.get(0) + "," + temp2.get(1) + "," + temp2.get(2) + "," + temp2.get(3);
+                                out = new PrintWriter(clientsConnected.get(i).getOutputStream(), true);
+                                out.println(s);
+                                out.flush();
+                                
+                                out = new PrintWriter(clientsConnected.get
+                                (requests.size() - 1).getOutputStream(), true);
+                                
+                                out.println(s2);
+                                out.flush();
+                                //needs to remove clients from clientsConnected list and requests ArrayList
+                                clientsConnected.get(i).close();
+                                clientsConnected.get(requests.size() - 1).close();
+                                
+                                requests.remove(i);
+                                requests.remove(requests.size() - 1);
+                                
+                                clientsConnected.remove(i);
+                                clientsConnected.remove(clientsConnected.size() - 1);
+                            }
+                        }
+                    }
+                }
+            }
+            //stop checking for matches -------------------------------------------------------------------------------
         }
     }
     
     //Here begins the methods that will be invoked via 'commands'------------------------------------------------------
-    
-    public void listRequests(Socket client) throws SocketException, IOException { //will need some sort of input to tell which client it needs to send to
-        //iterate through the arraylist and print the requests
+    public void listRequests(Socket client) throws SocketException, IOException {
+        //print the list of requests to the client
         out.println(requests);
         out.flush();
         client.close();
     }
     
-    public void reset(Socket client) throws SocketException, IOException { //will need some sort of input to tell which client it needs to send to
+    public void reset(Socket client) throws SocketException, IOException {
         //close up the clients' request and tell them that an error occured with the connection
-    	out.println("RESPONSE: success");
-    	out.flush();
-    	client.close();
-    	for (int i = 0; i < clientsConnected.size(); i++) {
-    		out = new PrintWriter(clientsConnected.get(i).getOutputStream(), true);
-    		out.println("ERROR: connection reset");
-    		clientsConnected.get(i).close();
-    	}
-    	requests.clear();
-    	elements.clear();
-    	clientsConnected.clear();
-    }
+        out.println("RESPONSE: success");
+        out.flush();
+        client.close();
+        for (int i = 0; i < clientsConnected.size(); i++) {
+            out = new PrintWriter(clientsConnected.get(i).getOutputStream(), true);
+            out.println("ERROR: connection reset");
+            clientsConnected.get(i).close();
+        }
+        if (requests.size() > 0) {
+            requests.clear();
+        }
+        if (elements != null) {
+            if (elements.size() > 0) {
+                elements.clear();
+            }
+        }
+        if (clientsConnected.size() > 0) {
+            clientsConnected.clear();
+        }
+    } 
     
-    public void shutdown(Socket client) throws SocketException, IOException { //will need some sort of input to tell which client it needs to send to
-        //close up, similar to the reset command, but exit the run loop, shuting down the server
-    	reset(client);
-    	isStopped = true;
+    public void shutdown(Socket client) throws SocketException, IOException {
+        //similar to the reset command, but exit the run loop and close the server socket; shutting down the server
+        reset(client);
+        ss.close();
+        isStopped = true;
     }
     //Here ends the 'command' methods----------------------------------------------------------------------------------
     
     public static void main(String[] args) throws SocketException, IOException {
+        boolean done = false;
+        
         if (args.length == 0) {
             SafeWalkServer sws = new SafeWalkServer();
             sws.run();
+            done = true;
         }
-        if (args[0].length() != 0) {
-            int p = 0;
-            String s = args[0];
-            Scanner scan = new Scanner(s);
-            while (scan.hasNextInt()) {
-                p += scan.nextInt();
+        if (done != true) {
+            if (args[0].length() != 0) {
+                int p = 0;
+                String s = args[0];
+                Scanner scan = new Scanner(s);
+                while (scan.hasNextInt()) {
+                    p += scan.nextInt();
+                }
+                SafeWalkServer sws = new SafeWalkServer(p);
+                sws.run();
             }
-            SafeWalkServer sws = new SafeWalkServer(p);
-            sws.run();
         }
     }
 }
-//might need this class still? Who knows, this project is a holy mess.
-//class Client {
-    
-    //String command;
-    //Socket client;
-    
-    //public Client(Socket client, String command) {
-        //this.command = command;
-        //this.client = client;
-    //}
-//}
